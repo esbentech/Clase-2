@@ -1,0 +1,116 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+//Servicios 
+
+model Solicitantes {
+  SolicitantesId         Int              @id @default(autoincrement())
+  NombreDelSolicitante   String
+  ApellidoDelSolicitante String
+  CorreoDelSolicitante   String           @unique
+  TelefonoDelSolicitante String
+  Solicitudes            Solicitudes[]    @relation("ModeloDeSolicitantes")
+  Programaciones         Programaciones[] @relation("ModeloDeAsignacionDeProgramacion")
+}
+
+model Solicitudes {
+  Solicitudesid     Int               @id @default(autoincrement())
+  FechaSolicitud    DateTime          @default(now())
+  Solicitante       Solicitantes      @relation("ModeloDeSolicitantes", fields: [SolicitanteId], references: [SolicitantesId])
+  SolicitanteId     Int
+  Servicio          Servicios         @relation("ModeloDeSolicitudes", fields: [ServiciosId], references: [ServiciosId])
+  ServiciosId       Int
+  EstadoDeSolicitud EstadoDeSolicitud @default(Pendiente)
+}
+
+model Servicios {
+  ServiciosId  Int              @id @default(autoincrement())
+  Servicio     String
+  Descripcion  String
+  Programacion Programaciones[] @relation("ModeloDeProgramaciones")
+  Solicitudes  Solicitudes[]    @relation("ModeloDeSolicitudes")
+}
+
+model Programaciones {
+  ProgramacionesId    Int          @id @default(autoincrement())
+  FechaDeProgramacion DateTime     @default(now())
+  Servicios           Servicios    @relation("ModeloDeProgramaciones", fields: [ServiciosId], references: [ServiciosId])
+  ServiciosId         Int
+  EstadoProgramacion  String
+  Solicitantes        Solicitantes @relation("ModeloDeAsignacionDeProgramacion", fields: [SolicitantesId], references: [SolicitantesId])
+  SolicitantesId      Int
+}
+
+model Auditorias {
+  AuditoriasId Int        @id @default(autoincrement())
+  Usuarios     Usuarios[] @relation("ModeloDeAuditoria")
+}
+
+model Usuarios {
+  UsuarioId             Int             @id @default(autoincrement())
+  NombreDeUsuario       String
+  CorreoDelUsuario      String
+  ContrasennaDelusuario String
+  EstadoDeUsuario       EstadoDeUsuario @default(Activo)
+  Auditorias            Auditorias      @relation("ModeloDeAuditoria", fields: [AuditoriasId], references: [AuditoriasId])
+  AuditoriasId          Int
+}
+
+model Provincias {
+  ProvinciaId     Int        @id @default(autoincrement()) //todo modelo debe tener un ID
+  Provincia       String // tipo de dato Para un atributo sea opcional se pone un ?
+  Cantones        Cantones[] @relation("ModeloDeProvincias") // esto es para decirle a provincia que se va  relacionar con cantones
+  //control de auditoria
+  FechaDeCreacion DateTime   @default(now())
+  ActualizadoEn   DateTime   @default(now()) @updatedAt // lo que va entre comillas o una funcion eso se puede predeterminado 
+  //@updatedAt hace todo el proceso automatico
+}
+
+model Cantones {
+  CantonId        Int         @id @default(autoincrement())
+  Canton          String
+  Provincias      Provincias  @relation("ModeloDeProvincias", fields: [ProvinciaId], references: [ProvinciaId]) // se relaciona por el campo fields: [ProvinciaId], references: [ProvinciaId 
+  ProvinciaId     Int // este es el campo declarado si en fields dice XX va XX
+  Distritos       Distritos[]
+  FechaDeCreacion DateTime    @default(now())
+  ActualizadoEn   DateTime    @default(now()) @updatedAt
+}
+
+model Distritos {
+  DistritoId      Int        @id @default(autoincrement())
+  Distrito        String
+  Cantones        Cantones   @relation(fields: [CantonId], references: [CantonId])
+  CantonId        Int
+  FechaDeCreacion DateTime   @default(now())
+  ActualizadoEn   DateTime   @default(now()) @updatedAt
+  Valoracion      Valoracion @default(Bueno)
+}
+
+enum Valoracion {
+  Excelente
+  Bueno
+  Regular
+}
+
+enum EstadoDeSolicitud {
+  Pendiente
+  Aprobada
+  Denegada
+}
+
+enum EstadoDeUsuario {
+  Activo
+  Desactivado
+}
